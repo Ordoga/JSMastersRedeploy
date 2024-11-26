@@ -27,7 +27,6 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 setupSocketAPI(server)
-
 app.use(express.json())
 // app.use(cookieParser())
 
