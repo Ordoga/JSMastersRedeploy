@@ -1,6 +1,8 @@
 import { Server } from 'socket.io'
 
-var gIo = null
+let gIo = null
+
+let roomState = {}
 
 export function setupSocketAPI(server) {
     gIo = new Server(server, {
@@ -10,18 +12,27 @@ export function setupSocketAPI(server) {
     })
 
     gIo.on('connection', socket => {
-        gIo.emit('user-connected', 'A user Has Connected')
-
-        // socket.on('entered-codeblock-page', data => {
-        //     socket.join(data.codeblockId)
-        // })
+        socket.on('entered-codeblock-page', data => {
+            // Sets user to specific room
+            socket.join(data.codeblockId)
+            socket.room = data.codeblockId
+            socket.isMentor = false
+            // Room is initialized
+            if (roomState[data.codeblockId]) {
+                // Room is empty
+            } else {
+                roomState[data.codeblockId] = []
+                socket.isMentor = true
+            }
+            socket.emit('set-role', socket.isMentor)
+        })
 
         socket.on('changed-code', newCode => {
-            socket.broadcast.emit('update-code', newCode)
+            socket.broadcast.to(socket.room).emit('update-code', newCode)
         })
 
         socket.on('disconnect', socket => {
-            console.log(`socket with fullname ${socket.name} disconnected`)
+            console.log(`socket disconnected`)
         })
     })
 }
