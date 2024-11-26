@@ -8,12 +8,12 @@ import { Server } from 'socket.io'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { codeblockRoutes } from './api/codeblock/codeblock.routes.js'
+import { setupSocketAPI } from './services/socket.service.js'
 
 const port = process.env.PORT || 3030
 
 const app = express()
 const server = createServer(app)
-const io = new Server(server)
 app.use(express.static(path.resolve('public')))
 
 if (process.env.NODE_ENV === 'production') {
@@ -26,8 +26,11 @@ if (process.env.NODE_ENV === 'production') {
     app.use(cors(corsOptions))
 }
 
+setupSocketAPI(server)
+
 app.use(express.json())
-app.use(cookieParser())
+// app.use(cookieParser())
+
 app.use('/api/codeblock', codeblockRoutes)
 
 app.get('/**', (req, res) => {
