@@ -1,12 +1,21 @@
+import { ObjectId } from 'mongodb'
+import { dbService } from '../../services/db.service.js'
+
+const COLLECTION_NAME = 'codeblock'
+
 export const codeblockService = {
     query,
+    getCodeblockById,
 }
 
 async function query() {
-    const codeBlocks = [
-        { name: 'code1', id: '1' },
-        { name: 'code2', id: '2' },
-        { name: 'code3', id: '3' },
-    ]
-    return codeBlocks
+    const collection = await dbService.getCollection(COLLECTION_NAME)
+    const codeblocks = await collection.find().toArray()
+    return codeblocks
+}
+
+async function getCodeblockById(codeblockId) {
+    const collection = await dbService.getCollection(COLLECTION_NAME)
+    const codeblock = await collection.findOne({ _id: ObjectId.createFromHexString(codeblockId) })
+    return codeblock
 }
