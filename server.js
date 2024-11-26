@@ -6,6 +6,7 @@ import path from 'path'
 
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { codeblockRoutes } from './api/codeblock/codeblock.routes.js'
 
 const port = process.env.PORT || 3030
 
@@ -28,8 +29,7 @@ app.use(express.static(path.resolve('public')))
 
 app.use(express.json())
 app.use(cookieParser())
-
-//
+app.use('/api/codeblock', codeblockRoutes)
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
