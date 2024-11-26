@@ -1,8 +1,12 @@
 import { Server } from 'socket.io'
+import { codeblockService } from '../api/codeblock/codeblock.service.js'
 
 let gIo = null
 
 let roomState = {}
+
+let solutions = await codeblockService.getSolutions()
+console.log(solutions)
 
 export function setupSocketAPI(server) {
     gIo = new Server(server, {
@@ -29,10 +33,19 @@ export function setupSocketAPI(server) {
 
         socket.on('changed-code', newCode => {
             socket.broadcast.to(socket.room).emit('update-code', newCode)
+
+            if (newCode === solutions[socket.room]) {
+                gIo.to(socket.room).emit('problem-solved')
+            }
         })
 
-        socket.on('disconnect', socket => {
-            console.log(`socket disconnected`)
+        socket.on('disconnect', () => {
+            console.log(`socket of role ${socket.isMentor ? 'Mentor' : 'Student'} disconnected`)
+
+            if (socket.isMentor) {
+                socket.broadcast.to(socket.room).emit('mentor-left')
+                delete roomState[socket.room]
+            }
         })
     })
 }
