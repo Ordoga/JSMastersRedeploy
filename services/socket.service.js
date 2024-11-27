@@ -15,28 +15,24 @@ export function setupSocketAPI(server) {
     })
 
     gIo.on('connection', socket => {
-        socket.on('entered-codeblock-page', data => {
-            // Sets user to specific room
-
-            socket.join(data.codeblockId)
-            socket.room = data.codeblockId
-            socket.isMentor = false
-            // Room is initialized
-            if (roomState[data.codeblockId]) {
-            } else {
-                // Room is empty
-                roomState[data.codeblockId] = []
-                socket.isMentor = true
-            }
-            socket.emit('set-role', socket.isMentor)
+        socket.on('setup-socket', ({ nickname }) => {
+            socket.nickname = nickname
+            socket.score = 0
         })
 
-        socket.on('changed-code', newCode => {
-            socket.broadcast.to(socket.room).emit('update-code', newCode)
-
-            if (newCode === solutions[socket.room]) {
-                gIo.to(socket.room).emit('problem-solved')
+        socket.on('entered-codeblock-page', ({ codeblockId }) => {
+            if (socket.room) {
+                // Came straight from another room
+                socket.leave(socket.room)
             }
+            socket.join(codeblockId)
+            socket.room = codeblockId
+        })
+
+        socket.on('return-lobby', () => {
+            socket.leave(socket.room)
+            delete socket.room
+            delete socket.isMentor
         })
 
         socket.on('disconnect', () => {
@@ -47,5 +43,37 @@ export function setupSocketAPI(server) {
                 delete roomState[socket.room]
             }
         })
+
+        socket.on('changed-code', newCode => {
+            socket.broadcast.to(socket.room).emit('update-code', newCode)
+
+            if (newCode === solutions[socket.room].solution) {
+                gIo.to(socket.room).emit('problem-solved')
+                socket.score += 100 * solutions[socket.room].level
+                console.log(socket.score)
+            }
+        })
     })
 }
+
+// // If Mentor Changed from room to room,
+// if (socket.isMentor && socket.room) {
+//     socket.broadcast.to(socket.room).emit('mentor-left')
+// }
+
+// if (socket.room) {
+//     socket.leave(socket.room)
+// }
+
+// socket.join(codeblockId)
+// socket.room = codeblockId
+// socket.isMentor = false
+
+// if (roomState[codeblockId]) {
+//     // Room is initialized
+// } else {
+//     // Room is empty
+//     roomState[codeblockId] = []
+//     socket.isMentor = true
+// }
+// socket.emit('set-role', socket.isMentor)

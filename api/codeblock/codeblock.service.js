@@ -25,8 +25,8 @@ async function getCodeblockById(codeblockId) {
 async function getSolutions() {
     const codeblocks = await query()
     let solutions = {}
-    codeblocks.forEach(codeblock => {
-        solutions[codeblock._id] = codeblock.solution
+    codeblocks.forEach(({ _id, solution, level }) => {
+        solutions[_id] = { solution, level }
     })
     return solutions
 }
