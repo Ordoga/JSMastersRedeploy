@@ -6,6 +6,7 @@ let gIo = null
 
 let activeRooms = {}
 let connectedUsers = []
+let debounceTimers = {}
 
 let solutions = await codeblockService.getSolutions()
 
@@ -62,10 +63,21 @@ export function setupSocketAPI(server) {
 
         socket.on('changed-code', newCode => {
             socket.broadcast.to(socket.room).emit('update-code', newCode)
-            if (newCode === solutions[socket.room].solution) {
-                gIo.to(socket.room).emit('problem-solved')
-                socket.userData.score += 100 * solutions[socket.room].level
+            // Clear the previous debounce timer for this room
+            if (debounceTimers[socket.room]) {
+                clearTimeout(debounceTimers[socket.room])
             }
+
+            // Set a new debounce timer
+            debounceTimers[socket.room] = setTimeout(() => {
+                if (newCode === solutions[socket.room].solution) {
+                    // Emit problem solved to the room
+                    gIo.to(socket.room).emit('problem-solved')
+
+                    // Update the user's score
+                    socket.userData.score += 100 * solutions[socket.room].level
+                }
+            }, 1000) // 500 milliseconds debounce time
         })
     })
 }
