@@ -6,7 +6,6 @@ let gIo = null
 let roomState = {}
 
 let solutions = await codeblockService.getSolutions()
-console.log(solutions)
 
 export function setupSocketAPI(server) {
     gIo = new Server(server, {
@@ -18,13 +17,14 @@ export function setupSocketAPI(server) {
     gIo.on('connection', socket => {
         socket.on('entered-codeblock-page', data => {
             // Sets user to specific room
+
             socket.join(data.codeblockId)
             socket.room = data.codeblockId
             socket.isMentor = false
             // Room is initialized
             if (roomState[data.codeblockId]) {
-                // Room is empty
             } else {
+                // Room is empty
                 roomState[data.codeblockId] = []
                 socket.isMentor = true
             }
