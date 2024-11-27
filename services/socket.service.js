@@ -72,7 +72,7 @@ export function setupSocketAPI(server) {
                     gIo.to(socket.room).emit('problem-solved')
                     socket.userData.score += 100 * solutions[socket.room].level
                 }
-            }, 300)
+            }, 100)
         })
     })
 }
