@@ -60,11 +60,9 @@ export function setupSocketAPI(server) {
 
         socket.on('changed-code', newCode => {
             socket.broadcast.to(socket.room).emit('update-code', newCode)
-
             if (newCode === solutions[socket.room].solution) {
                 gIo.to(socket.room).emit('problem-solved')
                 socket.userData.score += 100 * solutions[socket.room].level
-                console.log(socket.score)
             }
         })
     })
