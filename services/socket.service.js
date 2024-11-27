@@ -68,16 +68,14 @@ export function setupSocketAPI(server) {
                 clearTimeout(debounceTimers[socket.room])
             }
 
-            // Set a new debounce timer
             debounceTimers[socket.room] = setTimeout(() => {
                 if (newCode === solutions[socket.room].solution) {
                     // Emit problem solved to the room
                     gIo.to(socket.room).emit('problem-solved')
-
                     // Update the user's score
                     socket.userData.score += 100 * solutions[socket.room].level
                 }
-            }, 1000) // 500 milliseconds debounce time
+            }, 1000)
         })
     })
 }
