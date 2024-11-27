@@ -7,6 +7,7 @@ export const codeblockService = {
     query,
     getCodeblockById,
     getSolutions,
+    getDefaultActiveRooms,
 }
 
 async function query() {
@@ -22,11 +23,18 @@ async function getCodeblockById(codeblockId) {
     return codeblock
 }
 
-async function getSolutions() {
-    const codeblocks = await query()
+function getSolutions(codeblocks) {
     let solutions = {}
     codeblocks.forEach(({ _id, solution, level }) => {
         solutions[_id] = { solution, level }
     })
     return solutions
+}
+
+function getDefaultActiveRooms(codeblocks) {
+    let activeRooms = {}
+    codeblocks.forEach(({ _id }) => {
+        activeRooms[_id] = false
+    })
+    return activeRooms
 }
