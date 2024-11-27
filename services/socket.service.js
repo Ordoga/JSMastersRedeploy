@@ -1,9 +1,10 @@
 import { Server } from 'socket.io'
 import { codeblockService } from '../api/codeblock/codeblock.service.js'
+import { utilService } from './util.service.js'
 
 let gIo = null
 
-let roomState = {}
+let activeRooms = {}
 
 let solutions = await codeblockService.getSolutions()
 
@@ -16,17 +17,30 @@ export function setupSocketAPI(server) {
 
     gIo.on('connection', socket => {
         socket.on('setup-socket', ({ nickname }) => {
-            socket.nickname = nickname
-            socket.score = 0
+            socket.userData = { nickname, score: 0, id: utilService.generateId() }
+            console.log(socket.userData)
+
+            socket.emit('set-user-data', socket.userData)
         })
 
-        socket.on('entered-codeblock-page', ({ codeblockId }) => {
+        socket.on('enter-codeblock-page', ({ codeblockId }) => {
+            // console.log(`user with id ${socket.userData.id} have entered the room`)
+
             if (socket.room) {
                 // Came straight from another room
                 socket.leave(socket.room)
             }
             socket.join(codeblockId)
             socket.room = codeblockId
+            socket.isMentor = false
+            // Mentor enters - Initalize Room
+            if (!activeRooms[codeblockId]) {
+                activeRooms[codeblockId] = []
+                socket.isMentor = true
+            } else {
+                activeRooms[codeblockId].push(socket.userData)
+            }
+            socket.emit('set-role', socket.isMentor)
         })
 
         socket.on('return-lobby', () => {
@@ -40,7 +54,7 @@ export function setupSocketAPI(server) {
 
             if (socket.isMentor) {
                 socket.broadcast.to(socket.room).emit('mentor-left')
-                delete roomState[socket.room]
+                delete activeRooms[socket.room]
             }
         })
 
@@ -49,7 +63,7 @@ export function setupSocketAPI(server) {
 
             if (newCode === solutions[socket.room].solution) {
                 gIo.to(socket.room).emit('problem-solved')
-                socket.score += 100 * solutions[socket.room].level
+                socket.userData.score += 100 * solutions[socket.room].level
                 console.log(socket.score)
             }
         })
