@@ -5,6 +5,7 @@ import { utilService } from './util.service.js'
 let gIo = null
 
 let activeRooms = {}
+let connectedUsers = []
 
 let solutions = await codeblockService.getSolutions()
 
@@ -18,9 +19,9 @@ export function setupSocketAPI(server) {
     gIo.on('connection', socket => {
         socket.on('setup-socket', ({ nickname }) => {
             socket.userData = { nickname, score: 0, id: utilService.generateId() }
-            console.log(socket.userData)
-
+            connectedUsers.push(socket.userData)
             socket.emit('set-user-data', socket.userData)
+            gIo.emit('set-connected-users', connectedUsers)
         })
 
         socket.on('enter-codeblock-page', ({ codeblockId }) => {
@@ -41,6 +42,7 @@ export function setupSocketAPI(server) {
                 activeRooms[codeblockId].push(socket.userData)
             }
             socket.emit('set-role', socket.isMentor)
+            socket.emit('set-connected-users', activeRooms[codeblockId])
         })
 
         socket.on('return-lobby', () => {
