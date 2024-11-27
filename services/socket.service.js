@@ -62,20 +62,17 @@ export function setupSocketAPI(server) {
         })
 
         socket.on('changed-code', newCode => {
-            socket.broadcast.to(socket.room).emit('update-code', newCode)
             // Clear the previous debounce timer for this room
             if (debounceTimers[socket.room]) {
                 clearTimeout(debounceTimers[socket.room])
             }
-
             debounceTimers[socket.room] = setTimeout(() => {
+                socket.broadcast.to(socket.room).emit('update-code', newCode)
                 if (newCode === solutions[socket.room].solution) {
-                    // Emit problem solved to the room
                     gIo.to(socket.room).emit('problem-solved')
-                    // Update the user's score
                     socket.userData.score += 100 * solutions[socket.room].level
                 }
-            }, 1000)
+            }, 300)
         })
     })
 }
