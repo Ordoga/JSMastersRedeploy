@@ -3,6 +3,7 @@ import { codeblockService } from '../api/codeblock/codeblock.service.js'
 
 let gIo = null
 
+// TODO Extract to a service
 const codeblocks = await codeblockService.query()
 let codesAndSolutions = codeblockService.getCodesAndSolutions(codeblocks)
 let activeRooms = codeblockService.getDefaultActiveRooms(codeblocks)
@@ -31,11 +32,11 @@ export function setupSocketAPI(server) {
                 socket.leave(socket.room)
             }
             socket.join(codeblockId)
+
             socket.room = codeblockId
             // Mentor enters - Initalize Room
             if (!activeRooms[codeblockId]) {
                 activeRooms[codeblockId] = true
-
                 currentCodes[codeblockId] = codesAndSolutions[codeblockId].initialCode
 
                 socket.isMentor = true
@@ -66,15 +67,6 @@ export function setupSocketAPI(server) {
             delete socket.isMentor
         })
 
-        socket.on('disconnect', () => {
-            if (socket.isMentor) {
-                socket.broadcast.to(socket.room).emit('mentor-left')
-                activeRooms[socket.room] = false
-            }
-            gIo.emit('set-active-rooms', activeRooms)
-            sendUserCountByRoom(socket.room)
-        })
-
         // Move debounce to client ?
         socket.on('changed-code', ({ newCode, codeblockId }) => {
             currentCodes[codeblockId] = newCode
@@ -88,6 +80,21 @@ export function setupSocketAPI(server) {
                     gIo.to(socket.room).emit('problem-solved')
                 }
             }, 100)
+        })
+
+        socket.on('reset-code', ({ codeblockId }) => {
+            if (!socket.isMentor) return
+            currentCodes[codeblockId] = codesAndSolutions[codeblockId].initialCode
+            socket.broadcast.to(codeblockId).emit('update-code', currentCodes[codeblockId])
+        })
+
+        socket.on('disconnect', () => {
+            if (socket.isMentor) {
+                socket.broadcast.to(socket.room).emit('mentor-left')
+                activeRooms[socket.room] = false
+            }
+            gIo.emit('set-active-rooms', activeRooms)
+            sendUserCountByRoom(socket.room)
         })
     })
 }

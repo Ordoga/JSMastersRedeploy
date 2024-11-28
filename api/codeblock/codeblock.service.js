@@ -11,20 +11,29 @@ export const codeblockService = {
 }
 
 async function query() {
-    const collection = await dbService.getCollection(COLLECTION_NAME)
-    const codeblocks = await collection.find().toArray()
-    return codeblocks
+    try {
+        const collection = await dbService.getCollection(COLLECTION_NAME)
+        const codeblocks = await collection.find().toArray()
+        return codeblocks
+    } catch (err) {
+        console.log(err)
+    }
 }
 
 async function getCodeblockById(codeblockId) {
-    const collection = await dbService.getCollection(COLLECTION_NAME)
-    const codeblock = await collection.findOne({ _id: ObjectId.createFromHexString(codeblockId) })
-    delete codeblock.solution
-    return codeblock
+    try {
+        const collection = await dbService.getCollection(COLLECTION_NAME)
+        const codeblock = await collection.findOne({ _id: ObjectId.createFromHexString(codeblockId) })
+        delete codeblock.solution
+        return codeblock
+    } catch (err) {
+        console.log(err)
+    }
 }
 
 function getCodesAndSolutions(codeblocks) {
     let codesAndSolutions = {}
+
     codeblocks.forEach(({ _id, solution, initialCode }) => {
         codesAndSolutions[_id] = { solution, initialCode }
     })
