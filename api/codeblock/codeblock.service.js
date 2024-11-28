@@ -6,7 +6,7 @@ const COLLECTION_NAME = 'codeblock'
 export const codeblockService = {
     query,
     getCodeblockById,
-    getSolutions,
+    getCodesAndSolutions,
     getDefaultActiveRooms,
 }
 
@@ -23,12 +23,12 @@ async function getCodeblockById(codeblockId) {
     return codeblock
 }
 
-function getSolutions(codeblocks) {
-    let solutions = {}
-    codeblocks.forEach(({ _id, solution, level }) => {
-        solutions[_id] = { solution, level }
+function getCodesAndSolutions(codeblocks) {
+    let codesAndSolutions = {}
+    codeblocks.forEach(({ _id, solution, initialCode }) => {
+        codesAndSolutions[_id] = { solution, initialCode }
     })
-    return solutions
+    return codesAndSolutions
 }
 
 function getDefaultActiveRooms(codeblocks) {

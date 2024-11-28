@@ -1,12 +1,12 @@
 import { Server } from 'socket.io'
 import { codeblockService } from '../api/codeblock/codeblock.service.js'
-import { utilService } from './util.service.js'
 
 let gIo = null
 
 const codeblocks = await codeblockService.query()
-let solutions = codeblockService.getSolutions(codeblocks)
+let codesAndSolutions = codeblockService.getCodesAndSolutions(codeblocks)
 let activeRooms = codeblockService.getDefaultActiveRooms(codeblocks)
+let currentCodes = {}
 let debounceTimers = {}
 
 function sendUserCountByRoom(roomId) {
@@ -23,27 +23,28 @@ export function setupSocketAPI(server) {
 
     gIo.on('connection', socket => {
         socket.on('setup-socket', ({ nickname }) => {
-            // socket.userData = { nickname, score: 0, id: utilService.generateId() }
-            // socket.emit('set-user-data', socket.userData)
+            socket.isMentor = false
         })
 
         socket.on('enter-codeblock-page', ({ codeblockId }) => {
             if (socket.room) {
-                // activeRooms[socket.room] = activeRooms[socket.room].filter(user => user.id !== socket.userData?.id)
                 socket.leave(socket.room)
             }
             socket.join(codeblockId)
             socket.room = codeblockId
-            socket.isMentor = false
             // Mentor enters - Initalize Room
             if (!activeRooms[codeblockId]) {
                 activeRooms[codeblockId] = true
+
+                currentCodes[codeblockId] = codesAndSolutions[codeblockId].initialCode
+
                 socket.isMentor = true
                 gIo.emit('set-active-rooms', activeRooms)
             }
             sendUserCountByRoom(codeblockId)
+
+            socket.emit('update-code', currentCodes[codeblockId])
             socket.emit('set-role', socket.isMentor)
-            // gIo.to(codeblockId).emit('set-connected-users', activeRooms[codeblockId])
         })
 
         socket.on('enter-lobby', () => {
@@ -51,18 +52,15 @@ export function setupSocketAPI(server) {
             if (socket.isMentor && socket.room) {
                 socket.broadcast.to(socket.room).emit('mentor-left')
                 activeRooms[socket.room] = false
+                delete currentCodes[socket.room]
             } // If anyone went to lobby from a codeblock room
             if (socket.room) {
                 socket.leave(socket.room)
                 sendUserCountByRoom(socket.room)
                 delete socket.room
             }
+            socket.isMentor = false
             gIo.emit('set-active-rooms', activeRooms)
-
-            // socket.join('lobby')
-            // socket.room = 'lobby'
-            // activeRooms['lobby'].push(socket.userData)
-            // socket.emit('set-connected-users', activeRooms['lobby'])
 
             // Reset Mentorship
             delete socket.isMentor
@@ -75,24 +73,19 @@ export function setupSocketAPI(server) {
             }
             gIo.emit('set-active-rooms', activeRooms)
             sendUserCountByRoom(socket.room)
-            // else {
-            //     if (activeRooms[socket.room]) {
-            //         activeRooms[socket.room] = activeRooms[socket.room].filter(user => user.id !== socket.userData.id)
-            //     }
-            // }
         })
 
         // Move debounce to client ?
-        socket.on('changed-code', newCode => {
+        socket.on('changed-code', ({ newCode, codeblockId }) => {
+            currentCodes[codeblockId] = newCode
             // Clear the previous debounce timer for this room
             if (debounceTimers[socket.room]) {
                 clearTimeout(debounceTimers[socket.room])
             }
             debounceTimers[socket.room] = setTimeout(() => {
                 socket.broadcast.to(socket.room).emit('update-code', newCode)
-                if (newCode === solutions[socket.room].solution) {
+                if (newCode === codesAndSolutions[socket.room].solution) {
                     gIo.to(socket.room).emit('problem-solved')
-                    // socket.userData.score += 100 * solutions[socket.room].level
                 }
             }, 100)
         })
