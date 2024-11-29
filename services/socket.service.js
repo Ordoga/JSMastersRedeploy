@@ -42,8 +42,8 @@ export function setupSocketAPI(server) {
                 socket.isMentor = true
                 gIo.emit('set-active-rooms', activeRooms)
             }
-            sendUserCountByRoom(codeblockId)
 
+            sendUserCountByRoom(codeblockId)
             socket.emit('update-code', currentCodes[codeblockId])
             socket.emit('set-role', socket.isMentor)
         })
@@ -54,10 +54,15 @@ export function setupSocketAPI(server) {
                 socket.broadcast.to(socket.room).emit('mentor-left')
                 activeRooms[socket.room] = false
                 delete currentCodes[socket.room]
-            } // If anyone went to lobby from a codeblock room
+            } else {
+                // Student exited to lobby from codeblock by himself
+                if (socket.room) {
+                    sendUserCountByRoom(socket.room)
+                }
+            }
+
             if (socket.room) {
                 socket.leave(socket.room)
-                sendUserCountByRoom(socket.room)
                 delete socket.room
             }
             socket.isMentor = false
