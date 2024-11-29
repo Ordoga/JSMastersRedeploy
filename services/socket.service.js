@@ -1,5 +1,6 @@
 import { Server } from 'socket.io'
 import { codeblockService } from '../api/codeblock/codeblock.service.js'
+import { logger } from './logger.service.js'
 
 let gIo = null
 
@@ -23,9 +24,7 @@ export function setupSocketAPI(server) {
     })
 
     gIo.on('connection', socket => {
-        socket.on('setup-socket', ({ nickname }) => {
-            socket.isMentor = false
-        })
+        logger.info('New user connected')
 
         socket.on('enter-codeblock-page', ({ codeblockId }) => {
             if (socket.room) {
@@ -38,9 +37,11 @@ export function setupSocketAPI(server) {
             if (!activeRooms[codeblockId]) {
                 activeRooms[codeblockId] = true
                 currentCodes[codeblockId] = codesAndSolutions[codeblockId].initialCode
-
                 socket.isMentor = true
                 gIo.emit('set-active-rooms', activeRooms)
+                logger.info(`Mentor initiated room ${codeblockId}`)
+            } else {
+                logger.info(`Student entered room ${codeblockId}`)
             }
 
             sendUserCountByRoom(codeblockId)
@@ -54,6 +55,7 @@ export function setupSocketAPI(server) {
                 socket.broadcast.to(socket.room).emit('mentor-left')
                 activeRooms[socket.room] = false
                 delete currentCodes[socket.room]
+                logger.info(`Mentor left room ${socket.room} - Room deactivated`)
             } else {
                 // Student exited to lobby from codeblock by himself
                 if (socket.room) {
@@ -83,8 +85,9 @@ export function setupSocketAPI(server) {
                 socket.broadcast.to(socket.room).emit('update-code', newCode)
                 if (newCode === codesAndSolutions[socket.room].solution) {
                     gIo.to(socket.room).emit('problem-solved')
+                    logger.info(`Problem solved in room ${socket.room}`)
                 }
-            }, 100)
+            }, 250)
         })
 
         socket.on('reset-code', ({ codeblockId }) => {

@@ -1,17 +1,14 @@
+import path from 'path'
+import cors from 'cors'
 import express from 'express'
 import { createServer } from 'node:http'
-import cors from 'cors'
-import path from 'path'
 
 import { codeblockRoutes } from './api/codeblock/codeblock.routes.js'
 import { setupSocketAPI } from './services/socket.service.js'
 
 const port = process.env.PORT || 3030
-
 const app = express()
 const server = createServer(app)
-
-// app.use(express.static(path.resolve('public')))
 
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.resolve('public')))
@@ -26,6 +23,7 @@ if (process.env.NODE_ENV === 'production') {
 setupSocketAPI(server)
 app.use(express.json())
 app.use('/api/codeblock', codeblockRoutes)
+
 app.get('/**', (req, res) => {
     res.sendFile(path.resolve('public/index.html'))
 })

@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb'
 import { dbService } from '../../services/db.service.js'
+import { logger } from '../../services/logger.service.js'
 
 const COLLECTION_NAME = 'codeblock'
 
@@ -16,7 +17,8 @@ async function query() {
         const codeblocks = await collection.find().toArray()
         return codeblocks
     } catch (err) {
-        console.log(err)
+        logger.error('Failed to get codeblocks from DB', err)
+        throw err
     }
 }
 
@@ -27,13 +29,13 @@ async function getCodeblockById(codeblockId) {
         delete codeblock.solution
         return codeblock
     } catch (err) {
-        console.log(err)
+        logger.error('Failed to get codeblock from DB', err)
+        throw err
     }
 }
 
 function getCodesAndSolutions(codeblocks) {
     let codesAndSolutions = {}
-
     codeblocks.forEach(({ _id, solution, initialCode }) => {
         codesAndSolutions[_id] = { solution, initialCode }
     })
