@@ -8,7 +8,6 @@ export const codeblockService = {
     query,
     getCodeblockById,
     getCodesAndSolutions,
-    getDefaultActiveRooms,
 }
 
 async function query() {
@@ -18,6 +17,7 @@ async function query() {
         return codeblocks
     } catch (err) {
         logger.error('Failed to get codeblocks from DB', err)
+        // TODO Throw new error ??
         throw err
     }
 }
@@ -34,18 +34,28 @@ async function getCodeblockById(codeblockId) {
     }
 }
 
-function getCodesAndSolutions(codeblocks) {
-    let codesAndSolutions = {}
-    codeblocks.forEach(({ _id, solution, initialCode }) => {
-        codesAndSolutions[_id] = { solution, initialCode }
-    })
-    return codesAndSolutions
-}
+// async function getInitialCodeblocksData() {
+//     try {
+//         const codeblocks = await query()
+//         const codesAndSolutions = getCodesAndSolutions(codeblocks)
+//         const activeRooms = _getDefaultActiveRooms(codeblocks)
+//         return { codesAndSolutions, activeRooms }
+//     } catch (err) {
+//         logger.error('Failed to get codeblocks data', err)
+//         throw err
+//     }
+// }
 
-function getDefaultActiveRooms(codeblocks) {
-    let activeRooms = {}
-    codeblocks.forEach(({ _id }) => {
-        activeRooms[_id] = false
-    })
-    return activeRooms
+async function getCodesAndSolutions() {
+    try {
+        const codeblocks = await query()
+        let codesAndSolutions = {}
+        codeblocks.forEach(({ _id, solution, initialCode }) => {
+            codesAndSolutions[_id] = { solution, initialCode }
+        })
+        return codesAndSolutions
+    } catch (err) {
+        logger.error('Failed to get codes and solutions', err)
+        throw err
+    }
 }
