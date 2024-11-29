@@ -43,10 +43,10 @@ export function setupSocketAPI(server) {
                 socket.isMentor = true
                 logger.info(`Mentor initiated room ${codeblockId}`)
             } else {
-                socket.emit(SOCKET_EVENT_UPDATE_CODE, currentCodes[codeblockId])
                 logger.info(`Student entered room ${codeblockId}`)
             }
             _sendUserCountByRoom(codeblockId)
+            socket.emit(SOCKET_EVENT_UPDATE_CODE, currentCodes[codeblockId])
             socket.emit(SOCKET_EVENT_SET_ROLE, socket.isMentor)
         })
 
